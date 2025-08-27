@@ -1,0 +1,7 @@
+.env
+.venv
+.python-version
+
+memories.txt
+sitemap_tch.txt
+uv.lock

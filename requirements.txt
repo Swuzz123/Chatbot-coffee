@@ -1,0 +1,14 @@
+python-dotenv
+pandas 
+pyodbc
+pymilvus
+langchain-google-genai
+google-generativeai
+google-ai-generativelanguage
+ipywidgets
+ipykernel
+streamlit
+sentence_transformers
+numpy
+fastapi
+uvicorn
