@@ -15,7 +15,7 @@ class EmbeddingModel():
     
     # Embedding function 
     def get_embedding(self, text):
-        if not text.strip():
+        if not text.strip(): 
             return []
         
         text = self.preprocess_text(text)
