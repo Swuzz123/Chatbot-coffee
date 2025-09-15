@@ -1,14 +1,16 @@
 from retrieval.query_processor import handle_user_query, is_exact_item
-from retrieval.milvus_search import is_exact_item
 
 def get_relevant_chunk(query):
     results = handle_user_query(query, limit=5)
     
     # Case 2: If retrurn list of sub_category
     if isinstance(results, str):
-        return results
+        return {"context": results, "image_url": []}
     
     if results:
+        # Collect image URLs in a list
+        image_urls = [item.get("image_url") for item in results if item.get("image_url")]
+        
         if len(results) == 1:
             # Case 1: Exact match
             item = results[0]
@@ -17,19 +19,20 @@ def get_relevant_chunk(query):
                 f"Giá: {item['price']} VNĐ\n"
                 f"Mô tả: {item['description']}"
             )
-            return context
+            return {"context": context, "image_url": image_urls}
         else:
+            # Case 2: General match with multiple items
             context = ""
             for item in results:
                 context += (
                     f"Tên: {item['title']}\n"
                     f"Giá: {item['price']} VNĐ\n"
-                    f"Mô tả: {item['description']}"
-                    f"-----\n"
+                    f"Mô tả: {item['description']}\n"
+                    f"---\n"
                 )
-            return context.strip()
-        
-    return "Quán của mình hiện không bán món nước này. Anh/chị muốn thử món nào khác không?"
+            return {"context": context.strip(), "image_url": image_urls}
+
+    return {"context": "Quán của mình hiện không bán món nước này. Anh/chị muốn thử món nào khác không?", "image_url": []}
 
 def make_prompt(query, context):
     # Determine case to create suitable instruction
@@ -38,14 +41,24 @@ def make_prompt(query, context):
     
     if case == 1:
         instruction = (
-            "Hãy trả lời một cách ấm áp, nhẹ nhàng như một cuộc hội thoại, tập trung vào món mà khách hàng hỏi. "
-            "Giới thiệu món, mô tả lợi ích dựa trên context, và hỏi thêm nếu cần."
+            """
+            Hãy trả lời một cách ấm áp, nhẹ nhàng, tập trung vào món mà khách hàng hỏi.
+            Tóm tắt mô tả món dựa trên context, chỉ nói những điểm nổi bật.
+            Cuối cùng, hỏi thêm nếu cần. 
+            """
         )
     else:
         instruction = (
-            "Hãy trả lời một cách thân thiện, tự nhiên. "
-            "Nếu context là danh sách loại món, liệt kê chúng và hỏi khách muốn loại nào cụ thể. "
-            "Nếu context là danh sách món, giới thiệu ngắn gọn từng món và khuyến khích khách chọn."
+            """
+            Hãy trả lời một cách thân thiện, tự nhiên.
+            Nếu context là danh sách các món, tóm tắt và giới thiệu từng món một cách ngắn gọn, chỉ nêu những đặc điểm nổi bật.
+            Sau đó, khuyến khích khách hàng chọn một món.
+            
+            Quan trọng: Vui lòng liệt kê mỗi món sử dụng dấu gạch đầu dòng (-) để đánh dấu từng món theo format sau
+            1. **[Tên món]**: [Mô tả]
+            2. **[Tên món]**: [Mô tả]
+            ...
+            """
         )
     
     return (

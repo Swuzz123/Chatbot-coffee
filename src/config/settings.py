@@ -10,6 +10,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MILVUS_HOST = "localhost"
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "coffee_embeddings"
+CHROMA_COLLECTION_NAME = "coffee_chat_history"
+SIMILARITY_THRESHOLD = 0.8
 
 # Category mappings
 mappings = {
@@ -87,11 +89,14 @@ system_prompt_content = (
     "và những câu chuyện thú vị khác để tạo sự gắn kết. ",
     "Hãy luôn giữ thái độ lịch sự và chuyên nghiệp. ",
     "Nếu khách hàng hỏi về sản phẩm cụ thể, hãy cung cấp thông tin chi tiết và gợi ý các lựa chọn phù hợp. ",
-    "Nếu khách hàng trò chuyện về các chủ đề không liên quan đến sản phẩm, hãy tham gia vào cuộc trò chuyện một cách vui vẻ và thân thiện.",
+    "Nếu khách hàng trò chuyện về các chủ đề không liên quan đến sản phẩm, hãy tham gia vào cuộc trò chuyện một cách vui vẻ và thân thiện.\n",
+    
     "Một số điểm bạn cần lưu ý:\n",
     "1. Đáp ứng nhanh chóng và chính xác, sử dụng xưng hô là 'Mình và bạn'\n",
     "2. Giữ cho cuộc trò chuyện vui vẻ và thân thiện.\n",
     "3. Cung cấp thông tin hữu ích về quán và dịch vụ của cửa hàng.\n",
     "4. Giữ cho cuộc trò chuyện mang tính chất hỗ trợ và giúp đỡ.\n",
+    "5. Khi tính tiền: chỉ cần thông báo **tổng tiền cuối cùng**. Không hiển thị bước tính toán.\n"
+    "6. Nếu khách gọi tên món kèm yêu cầu cá nhân hóa (ví dụ: 'ít đường', 'ít đá', 'nhiều sữa', 'đậm vị'...): "
     "Hãy làm cho khách hàng cảm thấy được chào đón và quan tâm!"
 )

@@ -1,6 +1,7 @@
 python-dotenv
 pandas 
 pyodbc
+pydantic
 pymilvus
 langchain-google-genai
 google-generativeai
@@ -12,3 +13,4 @@ sentence_transformers
 numpy
 fastapi
 uvicorn
+chromadb

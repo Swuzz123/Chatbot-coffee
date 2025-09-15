@@ -1,10 +1,11 @@
 import os
-from pymilvus import connections, Collection
-from sentence_transformers import SentenceTransformer, CrossEncoder
-from huggingface_hub import login
-from config.settings import MILVUS_HOST, MILVUS_PORT, COLLECTION_NAME, mappings, sub_category_keywords
-from embedding_model.core import EmbeddingModel
 from dotenv import load_dotenv
+from huggingface_hub import login
+from pymilvus import connections, Collection
+from embedding_model.core import EmbeddingModel
+from sentence_transformers import CrossEncoder
+from utils.query_utils import is_exact_item, get_category_from_query
+from config.settings import MILVUS_HOST, MILVUS_PORT, COLLECTION_NAME, mappings
 
 # Load .env file
 load_dotenv()
@@ -16,26 +17,20 @@ collection = Collection(COLLECTION_NAME)
 collection.load()
 print(f"Loaded sucessfully collection {COLLECTION_NAME}")
 
-# Case 1: If the customer directly asks to buy that item, then respond accurately.
-def is_exact_item(query):
-    query = query.strip().lower()
-    for main_cat, sub_cats in mappings.items():
-        for sub_cat, items in sub_cats.items():
-            for item in items:
-                if item.lower() in query:
-                    return True, item     
-    return False, None
+model = EmbeddingModel()
+rerank_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
+# Case 1: If the customer directly asks to buy that item, then respond accurately.
 def search_exact_item(query):
     is_exact, exact_title = is_exact_item(query)
     if not is_exact:
         return None, None
     
-    expr = f'Title == {exact_title}'
+    expr = f'Title == "{exact_title}"'
     
     try:
         search_results = collection.search(
-            data = [EmbeddingModel.get_embedding(exact_title)],
+            data = [model.get_embedding(exact_title)],
             anns_field="embedding",
             param={"metric_type": "L2", "params": {"nprobe": 8}},
             limit=1,
@@ -58,40 +53,7 @@ def search_exact_item(query):
     return retrieval_results
 
 # Case 2: When the user asks a general question about a type of beverage/food
-def get_category_from_query(query):
-    query =  query.lower()
-    
-    # 1. Check suggested keywords for sub_category
-    for main_cat, sub_cats in mappings.items():
-        for sub_cat in sub_cats.keys():
-            if sub_cat:
-                if sub_cat in sub_category_keywords:
-                    for keywords in sub_category_keywords[sub_cat]:
-                        if keywords in query:
-                            return main_cat, sub_cat
-                        
-    # 2. Check directly sub_category
-    for main_cat, sub_cats in mappings.items():
-        for sub_cat in sub_cats.keys():
-            if sub_cat and sub_cat.lower() in query:
-                return main_cat, sub_cat
-            
-    # 3. Check directly main_category
-    for main_cat in mappings.keys():
-        if main_cat.lower() in query:
-            return main_cat, None
-        
-    # 4. Check keywords by each items (fallback)
-    for main_cat, sub_cats in mappings.items():
-        for sub_cat, items in sub_cats.items():
-            for item in items:
-                if item.lower() in query:
-                    return main_cat, sub_cat
-                
-    return None, None
-
 def general_search_and_recommend(query, limit):
-    model = EmbeddingModel()
     query_embedding = model.get_embedding(query)
     
     main_cat, sub_cat = get_category_from_query(model.preprocess_text(query))
@@ -115,7 +77,7 @@ def general_search_and_recommend(query, limit):
             # If just have 1 sub_category or empty, recommend base on that directly
             else:
                 expr = f'Main_category == "{main_cat}"'
-
+                
     try:
         search_results = collection.search(
             data=[query_embedding],
@@ -141,7 +103,6 @@ def general_search_and_recommend(query, limit):
     ]
     
     # Rarank with Cross-Encoder
-    rerank_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
     if retrieval_results:
         pairs = [(query, f"{r['title']} {r['description']}") for r in retrieval_results]
         scores = rerank_model.predict(pairs)

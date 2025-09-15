@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 *.pyo
 
+coffee_chat_db
 memories.txt
 sitemap_tch.txt
 uv.lock
