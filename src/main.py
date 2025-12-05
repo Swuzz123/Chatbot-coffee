@@ -1,13 +1,10 @@
-from llm.generate import generate_answer
+from database.ingestion import ingest_data
 
-def main():
-    chat_history = []
-    while True:
-        query = input("Nhập câu hỏi (hoặc 'exit' để thoát): ")
-        if query.lower() == 'exit':
-            break
-        response = generate_answer(query, chat_history, limit=5)
-        print(f"Trả lời: {response}")
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+  try:
+    data = '/home/nmtri2110/Workspace/CoffeeAssistant/data/coffee_house_data.csv'
+    ingest_data(data)
+    
+    print("Succesfully ingest data!")
+  except Exception as e:
+    print("Failed to ingest data, reason {e}")
