@@ -1,49 +1,46 @@
 # database/setup_db.py
 import os
 import psycopg2
-from dotenv import load_dotenv
 from typing import Optional
-from pydantic import BaseModel
+from datetime import datetime
+from dotenv import load_dotenv
+from contextlib import contextmanager
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
 # ================== Connect to Database ==================
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
+DSN = os.getenv("DATABASE_URL")
 
+@contextmanager
 def get_db_connection():
-	return psycopg2.connect(
-    dbname=DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT
-)
+  conn = psycopg2.connect(DSN)
+  try:
+    yield conn
+  finally:
+    conn.close()
 
-# # ================== Setup ORM types ==================
-# class MenuItems(BaseModel):
-#   id:                  Optional[int] = None
-#   title:               str
-#   price:               float
-#   image_url:           str
-#   description:         str
-#   main_category:       str
-#   sub_category:        Optional[str] = None
+# ================== Setup ORM types ==================
+class MenuItems(BaseModel):
+  id:                  Optional[int] = None
+  title:               str
+  price:               float
+  image_url:           str
+  description:         str
+  main_category:       str
+  sub_category:        Optional[str] = None
   
-# class Order(BaseModel):
-#   id:                 Optional[int] = None
-#   customer_id:        str
-#   order_time:         
-#   status:             str
-#   total_price:        float
+class Order(BaseModel):
+  id:                  Optional[int] = None
+  customer_id:         str
+  status:              str
+  total_price:         float
+  order_time:          datetime = Field(default_factory=datetime.now)
 
-# class OrderItems(BaseModel):
-#   id:                  Optional[int] = None 
-#   order_id:            int
-#   item_id:             int
-#   quantity:            int
-#   customizations:      str
+class OrderItems(BaseModel):
+  id:                  Optional[int] = None 
+  order_id:            int
+  item_id:             int
+  quantity:            int
+  customizations:      str
    

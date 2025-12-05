@@ -27,6 +27,13 @@ def hand_customer_query(query: str) -> list[str]:
   else:
     return ["Tôi chưa hiểu bạn muốn uống gì. Bạn có thể mô tả rõ hơn không?"]
   
+@tool
+def get_order_status(order_id: int) -> str:
+  """
+  Retrieves the current status of a specific order
+  Returns a string indicating the status, or an error message if not found
+  """
+  
   
 tools = [hand_customer_query]
   

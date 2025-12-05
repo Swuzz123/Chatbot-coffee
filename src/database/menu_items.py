@@ -73,7 +73,6 @@ def fetchMenuItems():
     print(f"Cannot read the values, reason: {e}")
     return []
   
-# Custom SQL
 def getExactItem(item_name):
   """Return exact information of an item by its name"""
   try:
