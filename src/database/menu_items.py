@@ -1,6 +1,6 @@
 # database/menu_items.py
 import pandas as pd
-from typing import List
+from typing import List, Dict
 from .connection import get_db_connection
 
 # ==================== CRUD: Menu Items ====================
@@ -48,7 +48,7 @@ def insertItems(data_path: str):
               row["sub_category"]
             )
           )
-    conn.commit()
+      conn.commit()
     print("Insert values successfully!")
   except Exception as e:
     print(f"Cannot insert values, reason: {e}")
@@ -114,6 +114,7 @@ def getTopItemsFromMain(main_cat):
   try:
     with get_db_connection() as conn:
       with conn.cursor() as cur:
+        # Check if has subcategories
         cur.execute(
           """
           SELECT 
@@ -125,6 +126,7 @@ def getTopItemsFromMain(main_cat):
         )
         count = cur.fetchone()[0]
         if count == 0:
+          # No subcategories, return items directly
           cur.execute(
             """
             SELECT 
@@ -139,6 +141,7 @@ def getTopItemsFromMain(main_cat):
           rows = [list(r) for r in rows]
           return rows
         else:
+          # Has subcategories, return them
           return getSubCategories(main_cat)
   except Exception as e:
     return [(f"Error: {e}", 0, "")]
@@ -162,3 +165,29 @@ def getTopItemsFromSub(sub_cat):
           return rows
   except Exception as e:
     return [(f"Error: {e}", 0, "")]
+  
+def getMenuItemsByTitle(item_name: str) -> List[Dict]:
+  try:
+    with get_db_connection() as conn:
+      with conn.cursor() as cur:
+        cur.execute(
+          """
+          SELECT 
+            id, title, price 
+          FROM menu_items
+          WHERE LOWER(title) = LOWER(%s)
+          """, (item_name,)
+        )
+        rows = cur.fetchall()
+        
+        return [
+          {
+            "id": row[0],
+            "title": row[1],
+            "price": row[2]
+          }
+          for row in rows
+        ]
+  except Exception as e:
+    print(f"Error fetching item by title: {e}")
+    return []

@@ -1,4 +1,4 @@
-# database/setup_db.py
+# database/connection.py
 import os
 import psycopg2
 from typing import Optional
@@ -30,7 +30,7 @@ class MenuItems(BaseModel):
   main_category:       str
   sub_category:        Optional[str] = None
   
-class Order(BaseModel):
+class Orders(BaseModel):
   id:                  Optional[int] = None
   customer_id:         str
   status:              str

@@ -1,5 +1,5 @@
 # database/orders.py
-from .connection import Order
+from .connection import Orders
 from .connection import get_db_connection
 
 # ==================== CRUD: Order ====================
@@ -9,7 +9,7 @@ def initOrder():
       with conn.cursor() as cur:
         cur.execute(
           """
-          CREATE TABLE IF NOT EXISTS order (
+          CREATE TABLE IF NOT EXISTS orders (
             id                SERIAL PRIMARY KEY,
             customer_id       VARCHAR(255) NOT NULL,
             status            VARCHAR(50) NOT NULL DEFAULT 'pending',
@@ -19,26 +19,26 @@ def initOrder():
           """
         )
         conn.commit()
-        print("Successfully create Order table!")
+        print("Successfully create Orders table!")
   except Exception as e:
-    print(f"Cannot create Order table, reason: {e}")
+    print(f"Cannot create Orders table, reason: {e}")
     
-def insertOrder(order: Order) -> int:
+def insertOrder(orders: Orders) -> int:
   try:
     with get_db_connection() as conn:
       with conn.cursor() as cur:
         cur.execute(
           """
-          INSERT INTO order (
+          INSERT INTO orders (
             customer_id, status, total_price, order_time
           ) VALUES (%s, %s, %s, %s)
           RETURNING id
           """,
           (
-            order.customer_id,
-            order.status,
-            order.total_price,
-            order.order_time
+            orders.customer_id,
+            orders.status,
+            orders.total_price,
+            orders.order_time
           )
         )
         order_id = cur.fetchone()[0]
@@ -63,23 +63,26 @@ def updateOrderStatus(order_id: int, new_status: str) -> None:
     print(f"Cannot update order status, reason: {e}")
     raise
 
-def getOrderStatus(order_id: int) -> str:
+def getOrderStatus(order_id: int) -> dict | None:
   try:
     with get_db_connection() as conn:
       with conn.cursor() as cur:
         cur.execute(
           """
           SELECT
-            status, total_price
+            id, status, total_price
           FROM order
           WHERE id = %s
           """, (order_id,)
         )
-        order = cur.fetchone()
-        if order:
-          return f"Order ID: {order_id} status: {order['status']}. Total price: {order['total_price']} VNĐ"
-        else:
-          return f"Order ID: {order_id} not found"
+        row = cur.fetchone()
+        if row:
+          return {
+            "id": row[0],
+            "status": row[1],
+            "total_price": row[2]
+          }
+        return None
   except Exception as e:
     print(f"Cannot get order status, reason: {e}")
-    return ""   
+    return None

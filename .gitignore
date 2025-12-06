@@ -5,10 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 
-memories.txt
-uv.lock
 /app
 /api
+/volumes
+
 
 
 
